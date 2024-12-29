@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UpdateAdvisoryDto } from './dto/update-advisory.dto';
 import { Advisory, AdvisoryDocument } from './schemas/advisory.schemas';
-import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
+import { SoftDeleteModel } from 'soft-dele te-plugin-mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 import { User } from 'src/users/schemas/user.schema';
