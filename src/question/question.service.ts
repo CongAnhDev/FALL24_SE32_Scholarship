@@ -1,27 +1,27 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateQuizDto } from './dto/create-quiz.dto';
-import { UpdateQuizDto } from './dto/update-quiz.dto';
+import { Injectable } from '@nestjs/common';
+import { CreateQuestionDto } from './dto/create-question.dto';
+import { UpdateQuestionDto } from './dto/update-question.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { Quiz, QuizDocument } from './schemas/quiz.schemas.ts';
+import { Question, QuestionDocument } from './schemas/question.schemas';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { IUser } from 'src/users/users.interface';
-import aqp from 'api-query-params';
 import mongoose from 'mongoose';
+import aqp from 'api-query-params';
 
 @Injectable()
-export class QuizService {
+export class QuestionService {
   constructor(
-    @InjectModel(Quiz.name)
-    private quizModel: SoftDeleteModel<QuizDocument>,
+    @InjectModel(Question.name)
+    private questionModel: SoftDeleteModel<QuestionDocument>,
   ) { }
 
-  async create(createQuizDto: CreateQuizDto, user: IUser) {
+  async create(createQuestionDto: CreateQuestionDto, user: IUser) {
     const {
-      title, description, question, type
-    } = createQuizDto;
+      question, option, answer, quiz,
+    } = createQuestionDto;
 
-    let newQuiz = await this.quizModel.create({
-      title, description, question, type,
+    let newQuestion = await this.questionModel.create({
+      question, option, answer, quiz,
       createdBy: {
         _id: user._id,
         email: user.email
@@ -29,11 +29,10 @@ export class QuizService {
     })
 
     return {
-      _id: newQuiz?._id,
-      createdAt: newQuiz?.createdAt
+      _id: newQuestion?._id,
+      createdAt: newQuestion?.createdAt
     }
   }
-
 
   async findAll(currentPage: number, limit: number, qs: string) {
     const { filter, sort, population, projection } = aqp(qs);
@@ -42,10 +41,10 @@ export class QuizService {
     let offset = (+currentPage - 1) * (+limit);
     let defaultLimit = +limit ? +limit : 10;
 
-    const totalItems = (await this.quizModel.find(filter)).length;
+    const totalItems = (await this.questionModel.find(filter)).length;
     const totalPages = Math.ceil(totalItems / defaultLimit);
 
-    const result = await this.quizModel.find(filter)
+    const result = await this.questionModel.find(filter)
       .skip(offset)
       .limit(defaultLimit)
       .sort({ createdAt: -1 })
@@ -66,22 +65,19 @@ export class QuizService {
 
   async findOne(id: string) {
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      throw new BadRequestException("not found quiz to find")
+      return `not found question`;
     }
-    return (await this.quizModel.findById(id))
-      .populate({
-        path: "question", select: { _id: 1, question: 1, option: 1, answer: 1 } //-1 is off
-      });
+    return await this.questionModel.findById(id)
   }
 
 
-  async update(id: string, updateQuizDto: UpdateQuizDto, user: IUser) {
+  async update(id: string, updateQuestionDto: UpdateQuestionDto, user: IUser) {
     if (!mongoose.Types.ObjectId.isValid(id))
-      return `not found quiz`;
-    const updated = await this.quizModel.updateOne(
+      return `not found question`;
+    const updated = await this.questionModel.updateOne(
       { _id: id },
       {
-        ...updateQuizDto,
+        ...updateQuestionDto,
         updatedBy: {
           _id: user._id,
           email: user.email
@@ -92,8 +88,8 @@ export class QuizService {
 
   async remove(id: string, user: IUser) {
     if (!mongoose.Types.ObjectId.isValid(id))
-      return `not found quiz`;
-    await this.quizModel.updateOne(
+      return `not found question`;
+    await this.questionModel.updateOne(
       { _id: id },
       {
         deletedBy: {
@@ -101,7 +97,7 @@ export class QuizService {
           email: user.email
         }
       })
-    return this.quizModel.softDelete({
+    return this.questionModel.softDelete({
       _id: id
     })
   }
